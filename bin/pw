@@ -9,6 +9,7 @@
 # Operations:
 # pw clean              Clean intermediate files
 # pw atlassian          Search for "atlassian" in password file
+# pw search atlassian   Same as above
 # pw -- clean           Consider the rest of the line to be searches, not commands
 # pw -c NameOfService   Create a new service and open $VISUAL on the file
 # pw commit "Message"   Commit the pending changes to git
@@ -90,6 +91,9 @@ while (( "$#" )); do
 		elif [ "$1" == "clean" ]; then
 			echo "Cleaning up state"
 			cleanup
+		elif [ "$1" == "search" ]; then
+			shift
+			search $1
 		elif [ "$1" == "commit" ]; then
 			shift
 			git commit -a -m "$1"
