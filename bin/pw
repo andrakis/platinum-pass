@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+PWFILE=passwords.txt
+PWENC="$PWFILE.gpg"
+GREP_OPTS="-i --color"
+GPG_ENC_OPTS="--yes"
+GPG_DEC_OPTS=""
+
+ERR_MISSING=10
+ERR_ENC=11
+
+decrypt () {
+	if [ ! -f $PWFILE ]; then
+		gpg $GPG_DEC_OPTS $PWENC
+	fi
+}
+
+encrypt () {
+	if [ ! -f $PWFILE ]; then
+		echo "Missing $PWFILE"
+		exit $ERR_MISSING
+	fi
+	gpg $GPG_ENC_OPTS -c $PWFILE
+	if [ "$?" == "0" ]; then
+		cleanup
+	else
+		echo "Error encrypting"
+		exit $ERR_ENC
+	fi
+}
+
+append () {
+	decrypt
+	echo $1 >> $PWFILE
+}
+
+edit () {
+	decrypt
+	$VISUAL $PWFILE
+}
+
+cleanup () {
+	if [ -f $PWFILE ]; then
+		rm $PWFILE
+	fi
+}
+
+search () {
+	decrypt
+	grep $GREP_OPTS $1 $PWFILE
+}
+
+while (( "$#" )); do
+	if [ "$1" == "-c" ]; then
+		# Create
+		shift
+		append "$@ - "
+		edit
+		encrypt
+		cleanup
+	elif [ "$1" == "clean" ]; then
+		echo "Cleaning up state"
+		cleanup
+		exit 0
+	else
+		search $1
+	fi
+	shift
+done
+
