@@ -92,7 +92,7 @@ while (( "$#" )); do
 			cleanup
 		elif [ "$1" == "commit" ]; then
 			shift
-			git commit -a -m "$2"
+			git commit -a -m "$1"
 			if [ "$?" != "0" ]; then
 				echo "Error committing result, aborting cleanup"
 				exit $ERR_COMMIT
