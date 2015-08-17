@@ -14,6 +14,7 @@
 # pw -c NameOfService   Create a new service and open $VISUAL on the file
 # pw commit "Message"   Commit the pending changes to git
 # pw push               Push the pending changes
+# pw status             Display status
 #
 # Operations can be combined, and are run sequentially.
 # Eg:
@@ -26,7 +27,6 @@
 #  up intermediate files.
 #
 #
-set -x
 
 PWFILE=passwords.txt
 PWENC="$PWFILE.gpg"
@@ -47,14 +47,14 @@ decrypt () {
 encrypt () {
 	if [ ! -f $PWFILE ]; then
 		echo "Missing $PWFILE"
-		exit $ERR_MISSING
+		quit $ERR_MISSING
 	fi
 	gpg $GPG_ENC_OPTS -c $PWFILE
 	if [ "$?" == "0" ]; then
 		cleanup
 	else
 		echo "Error encrypting"
-		exit $ERR_ENC
+		quit $ERR_ENC
 	fi
 }
 
@@ -79,7 +79,21 @@ search () {
 	grep $GREP_OPTS $1 $PWFILE
 }
 
+show_status () {
+	git status
+}
+
+quit () {
+	popd
+	exit $1
+}
+
 do_cmds=1
+
+base=`readlink -f $0`
+base=`dirname $base`
+base=`readlink -f $base/../`
+pushd $base
 
 while (( "$#" )); do
 	if [ "$do_cmds" == "1" ]; then
@@ -99,16 +113,18 @@ while (( "$#" )); do
 			git commit -a -m "$1"
 			if [ "$?" != "0" ]; then
 				echo "Error committing result, aborting cleanup"
-				exit $ERR_COMMIT
+				quit $ERR_COMMIT
 			fi
 			cleanup
 		elif [ "$1" == "push" ]; then
 			git push
 			if [ "$?" != "0" ]; then
 				echo "Error pushing to remote"
-				exit $ERR_PUSH
+				quit $ERR_PUSH
 			fi
 			cleanup
+		elif [ "$1" == "status" ]; then
+			show_status
 		elif [ "$1" == "--" ]; then
 			do_cmds=0
 		else
@@ -120,3 +136,4 @@ while (( "$#" )); do
 	shift
 done
 
+quit 0
