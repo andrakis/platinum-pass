@@ -8,6 +8,7 @@ GPG_DEC_OPTS=""
 
 ERR_MISSING=10
 ERR_ENC=11
+ERR_COMMIT=12
 
 decrypt () {
 	if [ ! -f $PWFILE ]; then
@@ -61,7 +62,16 @@ while (( "$#" )); do
 	elif [ "$1" == "clean" ]; then
 		echo "Cleaning up state"
 		cleanup
-		exit 0
+	elif [ "$1" == "commit" ]; then
+		shift
+		git commit -a -m "$@"
+		if [ "$?" != "0" ]; then
+			echo "Error committing result, aborting cleanup"
+			exit $ERR_COMMIT
+		fi
+		cleanup
+	elif [ "$1" == "push" ]; then
+		git push
 	else
 		search $1
 	fi
