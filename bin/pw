@@ -15,6 +15,7 @@
 # pw commit "Message"   Commit the pending changes to git
 # pw push               Push the pending changes
 # pw status             Display status
+# pw list               Display passwords
 #
 # Operations can be combined, and are run sequentially.
 # Eg:
@@ -83,6 +84,11 @@ show_status () {
 	git status
 }
 
+list () {
+	decrypt
+	cat $PWFILE
+}
+
 quit () {
 	popd
 	exit $1
@@ -109,6 +115,7 @@ while (( "$#" )); do
 			shift
 			search $1
 		elif [ "$1" == "commit" ]; then
+			encrypt
 			shift
 			git commit -a -m "$1"
 			if [ "$?" != "0" ]; then
@@ -125,6 +132,8 @@ while (( "$#" )); do
 			cleanup
 		elif [ "$1" == "status" ]; then
 			show_status
+		elif [ "$1" == "list" ]; then
+			list
 		elif [ "$1" == "--" ]; then
 			do_cmds=0
 		else
