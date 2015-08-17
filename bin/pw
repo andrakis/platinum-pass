@@ -1,6 +1,30 @@
 #!/usr/bin/env bash
 
-# Encrypted password management
+# Encrypted password management script by Julian Thatcher
+# Date: 17/08/15
+#
+# Manages passwords.txt.gpg. The user will be asked to input their symmetric
+# key for encryption and decryption.
+#
+# Operations:
+# pw clean              Clean intermediate files
+# pw atlassian          Search for "atlassian" in password file
+# pw -- clean           Consider the rest of the line to be searches, not commands
+# pw -c NameOfService   Create a new service and open $VISUAL on the file
+# pw commit "Message"   Commit the pending changes to git
+# pw push               Push the pending changes
+#
+# Operations can be combined, and are run sequentially.
+# Eg:
+#  pw atlassian -c BitBucket commit "BitBucket account" push clean
+#
+#  This would show password matches for "atlassian"; create a new password
+#  named BitBucket and open $VISUAL to allow you to add your password; then
+#  a new commit would be added for the encrypted file
+#  (message "BitBucket account"); push commits to origin; and finally clean
+#  up intermediate files.
+#
+#
 set -x
 
 PWFILE=passwords.txt
@@ -54,27 +78,38 @@ search () {
 	grep $GREP_OPTS $1 $PWFILE
 }
 
+do_cmds=1
+
 while (( "$#" )); do
-	if [ "$1" == "-c" ]; then
-		# Create
-		shift
-		append "$2 - "
-		edit
-		encrypt
-		cleanup
-	elif [ "$1" == "clean" ]; then
-		echo "Cleaning up state"
-		cleanup
-	elif [ "$1" == "commit" ]; then
-		shift
-		git commit -a -m "$2"
-		if [ "$?" != "0" ]; then
-			echo "Error committing result, aborting cleanup"
-			exit $ERR_COMMIT
+	if [ "$do_cmds" == "1" ]; then
+		if [ "$1" == "-c" ]; then
+			# Create
+			shift
+			append "$1 - "
+			edit
+		elif [ "$1" == "clean" ]; then
+			echo "Cleaning up state"
+			cleanup
+		elif [ "$1" == "commit" ]; then
+			shift
+			git commit -a -m "$2"
+			if [ "$?" != "0" ]; then
+				echo "Error committing result, aborting cleanup"
+				exit $ERR_COMMIT
+			fi
+			cleanup
+		elif [ "$1" == "push" ]; then
+			git push
+			if [ "$?" != "0" ]; then
+				echo "Error pushing to remote"
+				exit $ERR_PUSH
+			fi
+			cleanup
+		elif [ "$1" == "--" ]; then
+			do_cmds=0
+		else
+			search $1
 		fi
-		cleanup
-	elif [ "$1" == "push" ]; then
-		git push
 	else
 		search $1
 	fi
