@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Encrypted password management
+set -x
+
 PWFILE=passwords.txt
 PWENC="$PWFILE.gpg"
 GREP_OPTS="-i --color"
@@ -55,7 +58,7 @@ while (( "$#" )); do
 	if [ "$1" == "-c" ]; then
 		# Create
 		shift
-		append "$@ - "
+		append "$2 - "
 		edit
 		encrypt
 		cleanup
@@ -64,7 +67,7 @@ while (( "$#" )); do
 		cleanup
 	elif [ "$1" == "commit" ]; then
 		shift
-		git commit -a -m "$@"
+		git commit -a -m "$2"
 		if [ "$?" != "0" ]; then
 			echo "Error committing result, aborting cleanup"
 			exit $ERR_COMMIT
