@@ -34,10 +34,23 @@ PWENC="$PWFILE.gpg"
 GREP_OPTS="-i --color"
 GPG_ENC_OPTS="--yes"
 GPG_DEC_OPTS=""
+PUSHD_OPTS="-n"
 
-ERR_MISSING=10
-ERR_ENC=11
-ERR_COMMIT=12
+ERR_MISSING=10      # PWFILE is missing
+ERR_ENC=11          # Error encrypting with gpg
+ERR_COMMIT=12       # Error committing to git
+ERR_PUSHD=13        # Error finding base directory
+
+editor=`which $VISUAL`
+if [ "$editor"x == "x" ]; then
+	editor=$EDITOR
+fi
+
+if [ ! -x "$editor" ]; then
+	vi=`/usr/bin/which vi`
+	echo "VISUAL/EDITOR '$editor' not found, falling back to '$vi'"
+	editor=$vi
+fi
 
 decrypt () {
 	if [ ! -f $PWFILE ]; then
@@ -66,7 +79,7 @@ append () {
 
 edit () {
 	decrypt
-	$VISUAL $PWFILE
+	$editor $PWFILE
 }
 
 cleanup () {
@@ -90,17 +103,24 @@ list () {
 }
 
 quit () {
-	popd
+	# Restore previous directory
+	popd > /dev/null
 	exit $1
 }
 
 do_cmds=1
 
+# Figure out where PWFILE exists and move to it
 base=`readlink -f $0`
 base=`dirname $base`
 base=`readlink -f $base/../`
-pushd $base
+pushd $base > /dev/null
+if [ "$?" != "0" ]; then
+	echo "Error moving to $base"
+	exit $ERR_PUSHD
+fi
 
+# Main processing loop
 while (( "$#" )); do
 	if [ "$do_cmds" == "1" ]; then
 		if [ "$1" == "-c" ]; then
