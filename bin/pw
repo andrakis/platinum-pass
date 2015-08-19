@@ -34,7 +34,7 @@
 PWFILE=passwords.txt
 PWENC="$PWFILE.gpg"
 GREP_OPTS="-i --color"
-GPG_ENC_OPTS="--yes"
+GPG_ENC_OPTS="--yes --cipher-algo AES256 --symmetric"
 GPG_DEC_OPTS=""
 PUSHD_OPTS="-n"
 
@@ -61,16 +61,15 @@ decrypt () {
 }
 
 encrypt () {
-	if [ ! -f $PWFILE ]; then
-		echo "Missing $PWFILE"
-		quit $ERR_MISSING
-	fi
-	gpg $GPG_ENC_OPTS -c $PWFILE
-	if [ "$?" == "0" ]; then
-		cleanup
-	else
-		echo "Error encrypting"
-		quit $ERR_ENC
+	if [ -f $PWFILE ]; then
+		gpg $GPG_ENC_OPTS $PWFILE
+		if [ "$?" == "0" ]; then
+			git add $PWENC
+			cleanup
+		else
+			echo "Error encrypting"
+			quit $ERR_ENC
+		fi
 	fi
 }
 
@@ -143,7 +142,8 @@ while (( "$#" )); do
 		elif [ "$1" == "commit" ]; then
 			encrypt
 			shift
-			git commit -a -m "$1"
+			git add $PWENC
+			git commit -m "$1"
 			if [ "$?" != "0" ]; then
 				echo "Error committing result, aborting cleanup"
 				quit $ERR_COMMIT
