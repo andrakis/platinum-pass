@@ -12,6 +12,8 @@
 # pw search atlassian   Same as above
 # pw -- clean           Consider the rest of the line to be searches, not commands
 # pw -c NameOfService   Create a new service and open $VISUAL on the file
+# pw edit               Edit the passwords file
+# pw encrypt            Encrypt the passwords file
 # pw commit "Message"   Commit the pending changes to git
 # pw push               Push the pending changes
 # pw status             Display status
@@ -128,6 +130,10 @@ while (( "$#" )); do
 			shift
 			append "$1 - "
 			edit
+		elif [ "$1" == "edit" ]; then
+			edit
+		elif [ "$1" == "encrypt" ]; then
+			encrypt
 		elif [ "$1" == "clean" ]; then
 			echo "Cleaning up state"
 			cleanup
