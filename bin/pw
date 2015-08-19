@@ -100,7 +100,7 @@ show_status () {
 
 list () {
 	decrypt
-	cat $PWFILE
+	less $PWFILE
 }
 
 quit () {
