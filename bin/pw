@@ -36,7 +36,6 @@ PWENC="$PWFILE.gpg"
 GREP_OPTS="-i --color"
 GPG_ENC_OPTS="--yes --cipher-algo AES256 --symmetric"
 GPG_DEC_OPTS=""
-PUSHD_OPTS="-n"
 
 ERR_MISSING=10      # PWFILE is missing
 ERR_ENC=11          # Error encrypting with gpg
