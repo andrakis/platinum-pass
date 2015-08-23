@@ -36,6 +36,8 @@ PWENC="$PWFILE.gpg"
 GREP_OPTS="-i --color"
 GPG_ENC_OPTS="--yes --cipher-algo AES256 --symmetric"
 GPG_DEC_OPTS=""
+VIM_OPTS="+EOF"
+EDITOR_OPTS=""
 
 ERR_MISSING=10      # PWFILE is missing
 ERR_ENC=11          # Error encrypting with gpg
@@ -51,6 +53,11 @@ if [ ! -x "$editor" ]; then
 	vi=`/usr/bin/which vi`
 	echo "VISUAL/EDITOR '$editor' not found, falling back to '$vi'"
 	editor=$vi
+fi
+
+echo $editor | grep vi >> /dev/null
+if [ "$?" == "0" ]; then
+	EDITOR_OPTS=$VIM_OPTS
 fi
 
 decrypt () {
@@ -79,7 +86,9 @@ append () {
 
 edit () {
 	decrypt
-	$editor $PWFILE
+	lines=`wc -l $PWFILE | egrep -o '^[0-9]+'`
+	opts=`echo $EDITOR_OPTS | sed s/EOF/$lines/g`
+	$editor $opts $PWFILE
 }
 
 cleanup () {
