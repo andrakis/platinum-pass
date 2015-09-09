@@ -38,6 +38,8 @@ GPG_ENC_OPTS="--yes --cipher-algo AES256 --symmetric"
 GPG_DEC_OPTS=""
 VIM_OPTS="+EOF"
 EDITOR_OPTS=""
+DIFF=`which colordiff`
+DIFF_OPTS="--unified"
 
 ERR_MISSING=10      # PWFILE is missing
 ERR_ENC=11          # Error encrypting with gpg
@@ -60,10 +62,18 @@ if [ "$?" == "0" ]; then
 	EDITOR_OPTS=$VIM_OPTS
 fi
 
+if [ "$DIFF"x == "x" ]; then
+	DIFF=`which diff`
+fi
+
 decrypt () {
 	if [ ! -f $PWFILE ]; then
 		gpg $GPG_DEC_OPTS $PWENC
 	fi
+}
+
+decrypt_stdout () {
+	gpg $GPG_DEC_OPTS --decrypt $PWENC
 }
 
 encrypt () {
@@ -109,6 +119,19 @@ show_status () {
 list () {
 	decrypt
 	less $PWFILE
+}
+
+show_diff () {
+	tmpfile=`mktemp`
+	decrypt_stdout > $tmpfile
+	if [ ! -f $PWFILE ]; then
+		cp $tmpfile $PWFILE
+	fi
+	set -x
+	$DIFF $DIFF_OPTS $tmpfile $PWFILE
+	# Restores +x without outputting the command
+	{ set +x; } 2> /dev/null
+	rm $tmpfile
 }
 
 quit () {
@@ -168,6 +191,8 @@ while (( "$#" )); do
 			show_status
 		elif [ "$1" == "list" ]; then
 			list
+		elif [ "$1" == "diff" ]; then
+			show_diff
 		elif [ "$1" == "--" ]; then
 			do_cmds=0
 		else
