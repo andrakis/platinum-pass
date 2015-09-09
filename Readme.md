@@ -10,25 +10,25 @@ Getting Started
 ---------------
 
 1. Clone the git repository to "platinum-vault"
-```
-   git clone --bare git@github.com:andrakis/platinum-pass platinum-vault
-```
+
+   `git clone --bare git@github.com:andrakis/platinum-pass platinum-vault`
+
 2. Clone the cloned repository. This will ensure all commits will be pushed to your local machine.
-```
-    git clone platinum-vault platinum-pass
-```
+
+    `git clone platinum-vault platinum-pass`
+
 3. Add platinum pass to your PATH
-```
-    export PATH=`readlink -f platinum-pass`/bin:$PATH
-```
+
+    ``export PATH=`readlink -f platinum-pass`/bin:$PATH``
+
 4. Create your first password and save the file
-```
-    pw -c Test
-```
+
+    `pw -c Test`
+
 5. Commit your changes to passwords.txt and push. You will be prompted for your password.
-```
-    pw commit "Initial passwords.txt commit" push
-```
+
+    `pw commit "Initial passwords.txt commit" push`
+
 
 You may want to add the export line in step 3 to your .bashrc file.
 
