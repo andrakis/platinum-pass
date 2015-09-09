@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
 # Encrypted password management script by Julian Thatcher
-# Date: 17/08/15
+# Date created: 17/08/15
+# Date updated: 09/09/15
 #
 # Manages passwords.txt.gpg. The user will be asked to input their symmetric
 # key for encryption and decryption.
+# If passwords.txt is already present, decryption will not occur.
 #
 # Operations:
 # pw clean              Clean intermediate files
 # pw atlassian          Search for "atlassian" in password file
 # pw search atlassian   Same as above
-# pw -- clean           Consider the rest of the line to be searches, not commands
+# pw --                 Consider the rest of the line to be searches, not commands
 # pw -c NameOfService   Create a new service and open $VISUAL on the file
 # pw edit               Edit the passwords file
 # pw encrypt            Encrypt the passwords file
@@ -18,6 +20,8 @@
 # pw push               Push the pending changes
 # pw status             Display status
 # pw list               Display passwords
+# pw diff               Display diff between current passwords.txt and encrypted
+#                       version of the file. You will be asked for the password.
 #
 # Operations can be combined, and are run sequentially.
 # Eg:
@@ -182,6 +186,13 @@ while (( "$#" )); do
 			cleanup
 		elif [ "$1" == "push" ]; then
 			git push
+			if [ "$?" != "0" ]; then
+				echo "Error pushing to remote"
+				quit $ERR_PUSH
+			fi
+			cleanup
+		elif [ "$1" == "push_force" ]; then
+			git push -f
 			if [ "$?" != "0" ]; then
 				echo "Error pushing to remote"
 				quit $ERR_PUSH
