@@ -1,39 +1,42 @@
 #!/usr/bin/env bash
 
-# Encrypted password management script by Julian Thatcher
-# Date created: 17/08/15
-# Date updated: 09/09/15
-#
-# Manages passwords.txt.gpg. The user will be asked to input their symmetric
-# key for encryption and decryption.
-# If passwords.txt is already present, decryption will not occur.
-#
-# Operations:
-# pw clean              Clean intermediate files
-# pw atlassian          Search for "atlassian" in password file
-# pw search atlassian   Same as above
-# pw --                 Consider the rest of the line to be searches, not commands
-# pw -c NameOfService   Create a new service and open $VISUAL on the file
-# pw edit               Edit the passwords file
-# pw encrypt            Encrypt the passwords file
-# pw commit "Message"   Commit the pending changes to git
-# pw push               Push the pending changes
-# pw status             Display status
-# pw list               Display passwords
-# pw diff               Display diff between current passwords.txt and encrypted
-#                       version of the file. You will be asked for the password.
-#
-# Operations can be combined, and are run sequentially.
-# Eg:
-#  pw atlassian -c BitBucket commit "BitBucket account" push clean
-#
-#  This would show password matches for "atlassian"; create a new password
-#  named BitBucket and open $VISUAL to allow you to add your password; then
-#  a new commit would be added for the encrypted file
-#  (message "BitBucket account"); push commits to origin; and finally clean
-#  up intermediate files.
-#
-#
+# Set HELP to the text below. The text below functions as both the output
+# of the --help parameter, and as documentation for the script itself.
+read -r -d '' HELP <<-'EOF'
+Encrypted password management script by Julian Thatcher
+Date created: 17/08/15
+Date updated: 03/02/16
+
+Manages passwords.txt.gpg. The user will be asked to input their symmetric
+key for encryption and decryption.
+If passwords.txt is already present, decryption will not occur.
+
+Operations:
+pw clean              Clean intermediate files
+pw atlassian          Search for "atlassian" in password file
+pw search atlassian   Same as above
+pw --                 Consider the rest of the line to be searches, not commands
+pw -c NameOfService   Create a new service and open \$VISUAL on the file
+pw -r NameOfService   Generate a random password for the given service
+pw edit               Edit the passwords file
+pw encrypt            Encrypt the passwords file
+pw commit "Message"   Commit the pending changes to git
+pw push               Push the pending changes
+pw status             Display status
+pw list               Display passwords
+pw diff               Display diff between current passwords.txt and encrypted
+                      version of the file. You will be asked for the password.
+
+Operations can be combined, and are run sequentially.
+Eg:
+ pw atlassian -c BitBucket commit "BitBucket account" push clean
+
+ This would show password matches for "atlassian"; create a new password
+ named BitBucket and open \$VISUAL to allow you to add your password; then
+ a new commit would be added for the encrypted file
+ (message "BitBucket account"); push commits to origin; and finally clean
+ up intermediate files.
+EOF
 
 PWFILE=passwords.txt
 PWENC="$PWFILE.gpg"
@@ -58,9 +61,11 @@ if [ "$editor"x == "x" ]; then
 fi
 
 if [ ! -x "$editor" ]; then
-	vi=`/usr/bin/which vi`
-	echo "VISUAL/EDITOR '$editor' not found, falling back to '$vi'"
-	editor=$vi
+	if [ ! -x "`which $editor`" ]; then
+		vi=`/usr/bin/which vi`
+		echo "VISUAL/EDITOR '$editor' not found, falling back to '$vi'"
+		editor=$vi
+	fi
 fi
 
 echo $editor | grep vi >> /dev/null
@@ -73,7 +78,7 @@ if [ "$DIFF"x == "x" ]; then
 fi
 
 decrypt () {
-	if [ ! -f $PWFILE ]; then
+	if [ ! -f $PWFILE ] && [ -f $PWENC ]; then
 		gpg $GPG_DEC_OPTS $PWENC
 		result=$?
 		if [ "$result" == "2" ]; then
@@ -123,7 +128,8 @@ cleanup () {
 
 search () {
 	decrypt
-	grep $GREP_OPTS $1 $PWFILE
+	# 0<&- closes stream 0 (stdin)
+	grep $GREP_OPTS $1 $PWFILE 0<&-
 }
 
 show_status () {
@@ -154,6 +160,11 @@ quit () {
 	exit $1
 }
 
+showhelp () {
+	echo "$HELP"
+	quit
+}
+
 do_cmds=1
 
 # Figure out where PWFILE exists and move to it
@@ -169,10 +180,18 @@ fi
 # Main processing loop
 while (( "$#" )); do
 	if [ "$do_cmds" == "1" ]; then
-		if [ "$1" == "-c" ]; then
+		if [ "$1" == "--help" ] || [ "$1" == "help" ]; then
+			showhelp
+		elif [ "$1" == "-c" ]; then
 			# Create
 			shift
 			append "$1 - "
+			edit
+		elif [ "$1" == "-r" ]; then
+			# Create using random password
+			shift
+			pw=`date +%s | sha256sum | base64 | head -c 32 ; echo`
+			append "$1 - / $pw"
 			edit
 		elif [ "$1" == "edit" ]; then
 			edit

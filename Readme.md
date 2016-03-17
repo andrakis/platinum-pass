@@ -4,7 +4,7 @@ Platinum Pass
 Encrypted password management script, designed to be run from the commandline.
 The passwords file is committed to git in an encrypted manner.
 
-For best results, you should have your own (private) git repository in which to commit your updated passwords.txt.gpg to.
+For best results, you should have your own (private) git repository in which to commit your updated passwords.txt.gpg to. This can be a directory on your local filesystem, or a remote git repository.
 
 Getting Started
 ---------------
@@ -54,6 +54,7 @@ Operations
     pw search atlassian   Same as above
     pw --                 Consider the rest of the line to be searches, not commands
     pw -c NameOfService   Create a new service and open $VISUAL on the file
+    pw -r NameOfService   Generate a random password for the given service
     pw edit               Edit the passwords file
     pw encrypt            Encrypt the passwords file
     pw commit "Message"   Commit the pending changes to git
